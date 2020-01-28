@@ -1,5 +1,24 @@
 ![libuv][libuv_banner]
 
+## CPU Pinning modification
+
+The environment variables `UV_PINNING_START` and `UV_PINNING_END` define the closed range of cores to which pin the Libuv threads.
+
+Eg.
+
+```bash
+$> UV_PINNING_START=2 UV_PINNING_END=4 program.exe
+$> #pins threads to cores 2, 3 and 4
+$> taskset --all-tasks -cp 176858
+pid 176858's current affinity list: 0-7
+pid 176859's current affinity list: 0-7
+pid 176860's current affinity list: 0-7
+pid 176861's current affinity list: 2-4
+pid 176862's current affinity list: 2-4
+pid 176863's current affinity list: 2-4
+```
+
+
 ## Overview
 
 libuv is a multi-platform support library with a focus on asynchronous I/O. It
