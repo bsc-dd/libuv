@@ -203,6 +203,23 @@ int uv_thread_create(uv_thread_t *tid, void (*entry)(void *arg), void *arg) {
 
   err = pthread_create(tid, attr, (void*(*)(void*)) entry, arg);
 
+  char *start_cpu_pin_char = getenv("UV_PINNING_START");
+  char *end_cpu_pin_char = getenv("UV_PINNING_END");
+
+  if (start_cpu_pin_char != NULL) {
+
+    size_t start_cpu_pin = atoi(start_cpu_pin_char) + 1;
+    size_t end_cpu_pin = uv_cpumask_size();
+
+    if (end_cpu_pin_char!=NULL)
+      end_cpu_pin = atoi(end_cpu_pin_char) + 1;
+
+    if (start_cpu_pin <= end_cpu_pin)
+      uv_thread_setaffinity(tid, start_cpu_pin, end_cpu_pin);
+
+    else
+      printf("Provided mask for Libuv thread is larger than expected");
+  }
   if (attr != NULL)
     pthread_attr_destroy(attr);
 
@@ -212,31 +229,13 @@ int uv_thread_create(uv_thread_t *tid, void (*entry)(void *arg), void *arg) {
 
 #if defined(__linux__) || defined(__FreeBSD__)
 
-int uv_thread_setaffinity(uv_thread_t* tid,
-                          char* cpumask,
-                          char* oldmask,
-                          size_t mask_size) {
-  int i;
-  int r;
+int uv_thread_setaffinity(uv_thread_t* tid, size_t start_cpu, size_t end_cpu) {
+  size_t i;
   uv__cpu_set_t cpuset;
-  int cpumasksize;
-
-  cpumasksize = uv_cpumask_size();
-  if (cpumasksize < 0)
-    return cpumasksize;
-  if (mask_size < (size_t)cpumasksize)
-    return UV_EINVAL;
-
-  if (oldmask != NULL) {
-    r = uv_thread_getaffinity(tid, oldmask, mask_size);
-    if (r < 0)
-      return r;
-  }
 
   CPU_ZERO(&cpuset);
-  for (i = 0; i < cpumasksize; i++)
-    if (cpumask[i])
-      CPU_SET(i, &cpuset);
+  for (i = start_cpu; i <= end_cpu; ++i)
+    CPU_SET(i-1, &cpuset);
 
   return UV__ERR(pthread_setaffinity_np(*tid, sizeof(cpuset), &cpuset));
 }
@@ -266,10 +265,7 @@ int uv_thread_getaffinity(uv_thread_t* tid,
   return 0;
 }
 #else
-int uv_thread_setaffinity(uv_thread_t* tid,
-                          char* cpumask,
-                          char* oldmask,
-                          size_t mask_size) {
+int uv_thread_setaffinity(uv_thread_t* tid, char* cpumask, size_t mask_size) {
   return UV_ENOTSUP;
 }
 

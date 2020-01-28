@@ -224,6 +224,24 @@ static void init_threads(void) {
   for (i = 0; i < nthreads; i++)
     if (uv_thread_create(threads + i, worker, &sem))
       abort();
+  char *start_cpu_pin_char = getenv("UV_PINNING_START");
+  char *end_cpu_pin_char = getenv("UV_PINNING_END");
+
+  if (start_cpu_pin_char != NULL) {
+
+    size_t start_cpu_pin = atoi(start_cpu_pin_char) + 1 ;
+    size_t end_cpu_pin = uv_cpumask_size();
+
+    if (end_cpu_pin_char!=NULL)
+      end_cpu_pin = atoi(end_cpu_pin_char) + 1;
+
+    if (start_cpu_pin <= end_cpu_pin)
+      for (i = 0; i < nthreads; i++) {
+        uv_thread_setaffinity(threads + i, start_cpu_pin, end_cpu_pin);
+      }
+    else
+      printf("Provided mask for Libuv thread is larger than expected");
+  }
 
   for (i = 0; i < nthreads; i++)
     uv_sem_wait(&sem);

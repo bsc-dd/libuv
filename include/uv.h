@@ -1640,10 +1640,7 @@ UV_EXTERN void uv_key_set(uv_key_t* key, void* value);
 typedef void (*uv_thread_cb)(void* arg);
 
 UV_EXTERN int uv_thread_create(uv_thread_t* tid, uv_thread_cb entry, void* arg);
-UV_EXTERN int uv_thread_setaffinity(uv_thread_t* tid,
-                                    char* cpumask,
-                                    char* oldmask,
-                                    size_t mask_size);
+UV_EXTERN int uv_thread_setaffinity(uv_thread_t* tid, size_t start_cpu, size_t end_cpu);
 UV_EXTERN int uv_thread_getaffinity(uv_thread_t* tid,
                                     char* cpumask,
                                     size_t mask_size);
